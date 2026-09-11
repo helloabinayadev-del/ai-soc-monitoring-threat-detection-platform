@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: soc_postgres
+    environment:
+      POSTGRES_DB: soc_monitoring_db
+      POSTGRES_USER: soc_user
+      POSTGRES_PASSWORD: soc_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soc_user -d soc_monitoring_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: soc_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
+  backend:
+    build: ./backend
+    container_name: soc_backend
+    environment:
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=soc_user
+      - POSTGRES_PASSWORD=soc_password
+      - POSTGRES_DB=soc_monitoring_db
+      - DATABASE_URL=postgresql://soc_user:soc_password@postgres:5432/soc_monitoring_db
+      - ELASTICSEARCH_HOST=http://elasticsearch:9200
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    container_name: soc_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  es_data:

@@ -1,0 +1,92 @@
+name: AI SOC Platform CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  backend-test:
+    name: Backend Lint, Test & Verification
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: soc_monitoring_db
+          POSTGRES_USER: soc_user
+          POSTGRES_PASSWORD: soc_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pytest httpx
+
+      - name: Run Pytest Test Suite
+        env:
+          DATABASE_URL: postgresql://soc_user:soc_password@localhost:5432/soc_monitoring_db
+          SECRET_KEY: CI_CD_PIPELINE_TEST_SECRET_KEY_987654321
+        run: |
+          cd backend
+          pytest -v
+
+  frontend-build:
+    name: Frontend TypeCheck & Vite Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: TypeScript Type Check
+        run: |
+          cd frontend
+          npx tsc --noEmit
+
+      - name: Build Vite Production Bundle
+        run: |
+          cd frontend
+          npm run build
+
+  docker-build:
+    name: Docker Compose Build Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Build Docker Compose Stack
+        run: |
+          docker compose build
