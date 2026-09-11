@@ -1,8 +1,17 @@
 import pytest
 from fastapi.testclient import TestClient
-from app.main import app
+from app.main import app as fastapi_app
+from app.core.database import Base, engine
+import app.models
+from app.seed import seed_database
 
-client = TestClient(app)
+client = TestClient(fastapi_app)
+
+
+@pytest.fixture(autouse=True)
+def setup_db():
+    Base.metadata.create_all(bind=engine)
+    seed_database()
 
 def test_rbac_unauthorized_access():
     # Attempting to access protected endpoint without token must return 401

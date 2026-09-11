@@ -1,3 +1,4 @@
+import uuid
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app as fastapi_app
@@ -52,13 +53,14 @@ def test_2_create_new_organization():
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
+    unique_slug = f"acme-soc-{uuid.uuid4().hex[:8]}"
     create_res = client.post("/api/v1/organizations/", json={
-        "name": "Acme Corp SOC",
-        "slug": "acme-soc"
+        "name": f"Acme Corp SOC {unique_slug}",
+        "slug": unique_slug
     }, headers=headers)
-    assert create_res.status_code == 200
+    assert create_res.status_code == 200, create_res.text
     new_org = create_res.json()
-    assert new_org["slug"] == "acme-soc"
+    assert new_org["slug"] == unique_slug
 
 def test_3_idor_cross_tenant_access_block():
     # Attempting to fetch non-existent or cross-tenant incident

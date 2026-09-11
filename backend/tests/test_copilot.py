@@ -1,8 +1,15 @@
 import pytest
 from fastapi.testclient import TestClient
-from app.main import app
+from app.main import app as fastapi_app
+from app.core.database import Base, engine
+import app.models
 
-client = TestClient(app)
+client = TestClient(fastapi_app)
+
+
+@pytest.fixture(autouse=True)
+def setup_db():
+    Base.metadata.create_all(bind=engine)
 
 def test_copilot_general_query():
     res = client.post("/api/v1/copilot/query", json={"query": "Explain brute force attack remediation"})

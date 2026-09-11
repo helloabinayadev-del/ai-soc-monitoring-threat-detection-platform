@@ -1,12 +1,24 @@
 import pytest
 from fastapi.testclient import TestClient
-from app.main import app
+from app.main import app as fastapi_app
+from app.core.database import Base, engine
+import app.models
+from app.seed import seed_database
 from app.ml.anomaly_detector import ml_anomaly_detector
 from app.ml.feature_engineering import feature_extractor
 from app.services.prioritization_service import prioritization_service
 from app.ml.evaluation_pipeline import evaluation_pipeline
 
-client = TestClient(app)
+client = TestClient(fastapi_app)
+
+
+@pytest.fixture(autouse=True)
+def setup_db():
+    Base.metadata.create_all(bind=engine)
+    try:
+        seed_database()
+    except Exception:
+        pass
 
 def test_ml_feature_extraction():
     log_dict = {
