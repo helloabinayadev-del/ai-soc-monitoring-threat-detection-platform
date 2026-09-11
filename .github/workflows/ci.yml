@@ -45,7 +45,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://soc_user:soc_password@localhost:5432/soc_monitoring_db
           SECRET_KEY: CI_CD_PIPELINE_TEST_SECRET_KEY_987654321
-          PYTHONPATH: backend
+          PYTHONPATH: .
         run: |
           cd backend
           pytest -v
