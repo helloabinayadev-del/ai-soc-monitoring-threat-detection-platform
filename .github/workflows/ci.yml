@@ -41,14 +41,22 @@ jobs:
           pip install -r backend/requirements.txt
           pip install pytest httpx
 
+      - name: Initialize PostgreSQL schema
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://soc_user:soc_password@localhost:5432/soc_monitoring_db
+          PYTHONPATH: .
+        run: |
+          python -c "import app.models; from app.core.database import Base, engine; Base.metadata.create_all(bind=engine); from app.seed import seed_database; seed_database()"
+          PGPASSWORD=soc_password psql -h localhost -U soc_user -d soc_monitoring_db -c "SELECT setval(pg_get_serial_sequence('organizations', 'id'), COALESCE((SELECT MAX(id) FROM organizations), 1), true);"
+
       - name: Run Pytest Test Suite
+        working-directory: backend
         env:
           DATABASE_URL: postgresql://soc_user:soc_password@localhost:5432/soc_monitoring_db
           SECRET_KEY: CI_CD_PIPELINE_TEST_SECRET_KEY_987654321
           PYTHONPATH: .
-        run: |
-          cd backend
-          pytest -v
+        run: pytest -v
 
   frontend-build:
     name: Frontend TypeCheck & Vite Build
