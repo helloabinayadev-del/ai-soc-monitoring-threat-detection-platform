@@ -142,15 +142,12 @@ This platform upgrades traditional SIEM functionality into an intelligent, multi
    npm run dev
    ```
 
-5. **Access Application**:
-   - Dashboard: `http://localhost:5173`
-   - API Docs: `http://localhost:8000/docs`
-   - Pre-seeded Test Credentials:
-     - **SOC_ADMIN**: `admin` / `Admin@123`
-     - **SOC_ANALYST**: `analyst` / `AnalystSec2026!`
-     - **INCIDENT_RESPONDER**: `responder` / `ResponderSec2026!`
-     - **SECURITY_VIEWER**: `viewer` / `ViewerSec2026!`
+5. ### Test Credentials
 
+For security reasons, passwords are not published in this repository.
+
+Use the project's local seed/configuration mechanism to create development
+accounts.
 ---
 
 ## Automated Test Suite
